@@ -102,15 +102,20 @@ impl Item {
 
 }
 
+/// Representation of a to-do list with multiple items.
 pub struct ToDoList {
+    /// Name of the to-do list
     name: String,
+    /// Description of the to-do list
+    description: String,
+    /// Collections of all `Item` structs within the to-do list
     items: HashMap<String, Item>,
 }
 
 impl ToDoList {
 
-    pub fn create_to_do_list(list_name: &str) -> Self {
-        ToDoList { name: list_name.to_string(), items: HashMap::new() }
+    pub fn create_to_do_list(list_name: &str, list_description: &str) -> Self {
+        ToDoList { name: list_name.to_string(), description: list_description.to_string(), items: HashMap::new() }
     }
 
     pub fn create_item(&mut self, name: &str, description: &str, priority: &str, replace: bool) -> Result<(), ToDoSelectionError> {
@@ -122,7 +127,23 @@ impl ToDoList {
         }
     }
 
-    pub fn list_all_open_items (&self) -> Vec<&Item> {
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn get_description(&self) -> &str {
+        &self.description
+    }    
+
+    pub fn list_all_items (&self) -> Vec<&Item> {
+        let mut output: Vec<&Item> = vec![];
+        for item in &self.items {
+            output.push(item.1);
+        }
+        output
+    }    
+
+    pub fn list_open_items (&self) -> Vec<&Item> {
         let mut output: Vec<&Item> = vec![];
         for item in &self.items {
             if !item.1.is_completed() {
@@ -139,6 +160,42 @@ impl ToDoList {
     pub fn delete_item(&mut self, item_name: &str) -> Result<(), ToDoSelectionError> {
         if self.list_contains_item(item_name) {
             self.items.remove(item_name);
+            Ok(())
+        } else {
+            Err(ToDoSelectionError::ToDoNotFound)
+        }
+    }
+
+    pub fn update_item_description(&mut self, item_name: &str, new_description: &str) -> Result<(), ToDoSelectionError> {
+        if let Some(item) = self.items.get_mut(item_name) {
+            item.update_description(new_description);
+            Ok(())
+        } else {
+            Err(ToDoSelectionError::ToDoNotFound)
+        }
+    }
+
+    pub fn update_item_priority(&mut self, item_name: &str, new_priority: &str) -> Result<(), ToDoSelectionError> {
+        if let Some(item) = self.items.get_mut(item_name) {
+            item.update_priority(new_priority);
+            Ok(())
+        } else {
+            Err(ToDoSelectionError::ToDoNotFound)
+        }
+    }
+
+    pub fn close_list_item(&mut self, item_name: &str) -> Result<(), ToDoSelectionError> {
+        if let Some(item) = self.items.get_mut(item_name) {
+            item.complete_item();
+            Ok(())
+        } else {
+            Err(ToDoSelectionError::ToDoNotFound)
+        }        
+    }
+
+    pub fn open_list_item(&mut self, item_name: &str) -> Result<(), ToDoSelectionError> {
+        if let Some(item) = self.items.get_mut(item_name) {
+            item.open_item();
             Ok(())
         } else {
             Err(ToDoSelectionError::ToDoNotFound)
