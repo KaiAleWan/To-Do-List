@@ -1,8 +1,11 @@
 use crate::list_items::enums::{Priority, ToDoSelectionError};
+use crate::utils::functions::{sort_list};
 use std::collections::HashMap;
 
+
 /// Representation of a single to-do list item.
-struct Item {
+#[derive(Debug, Clone)]
+pub struct Item {
     /// Name of the item
     name: String,
     /// Description of the item
@@ -18,7 +21,16 @@ struct Item {
 }
 
 impl Item {
-
+    /// Constructor function for a new `Item`. Every Item will be created as non-completed.
+    /// The creation date is always the day when the function was called.
+    /// 
+    /// # Arguments
+    /// * name : &str - Name of the Item
+    /// * description : &str - Item description
+    /// * priority : &str - Item priority
+    /// 
+    /// # Returns
+    /// * `Item`: A new instance of an Item 
     fn new(name: &str, description: &str, priority: &str) -> Self {
         Item { 
             name: name.to_string(), 
@@ -108,16 +120,38 @@ pub struct ToDoList {
     name: String,
     /// Description of the to-do list
     description: String,
-    /// Collections of all `Item` structs within the to-do list
+    /// Collection of all `Item` structs within the to-do list
     items: HashMap<String, Item>,
 }
 
 impl ToDoList {
-
+    /// Constructor function for a new, empty `ToDoList`.
+    /// The function assigns a name and a description to the new list.
+    /// 
+    /// # Arguments
+    /// * name : &str - Name of the list
+    /// * description : &str - List description
+    /// 
+    /// # Returns
+    /// * `ToDoList`: A new instance of a to-do list   
     pub fn create_to_do_list(list_name: &str, list_description: &str) -> Self {
         ToDoList { name: list_name.to_string(), description: list_description.to_string(), items: HashMap::new() }
     }
 
+    /// Creates a new `Item` and automatically stores it in the `ToDoList`.
+    /// By default, the method will check whether the list already contains in Item with 
+    /// the same name as the submitted one. If so, it will not create the new Item and instead
+    /// return an error.
+    /// Submitting the method with `replace` as `true` allows it to replace the existing version.
+    /// 
+    /// # Arguments
+    /// * name : &str - Name of the Item
+    /// * description : &str - Item description
+    /// * priority : &str - Item priority
+    /// * replace: bool - Set to true to replace an existing Item
+    /// 
+    /// # Errors
+    /// * `ToDoSelectionError::ToDoAlreadyPresent`: An Item with the same name already exists in the ToDoList and replace was set to false.  
     pub fn create_item(&mut self, name: &str, description: &str, priority: &str, replace: bool) -> Result<(), ToDoSelectionError> {
         if !self.list_contains_item(name) || replace {
             self.items.insert(name.to_string(), Item::new(name, description, priority));
@@ -127,36 +161,66 @@ impl ToDoList {
         }
     }
 
+    /// Creates a reference to the `ToDoList` name.
+    /// 
+    /// # Returns
+    /// * `&str`: ToDoList name    
     pub fn get_name(&self) -> &str {
         &self.name
     }
 
+    /// Creates a reference to the `ToDoList` description.
+    /// 
+    /// # Returns
+    /// * `&str`: ToDoList description      
     pub fn get_description(&self) -> &str {
         &self.description
     }    
 
-    pub fn list_all_items (&self) -> Vec<&Item> {
-        let mut output: Vec<&Item> = vec![];
-        for item in &self.items {
-            output.push(item.1);
-        }
-        output
-    }    
-
-    pub fn list_open_items (&self) -> Vec<&Item> {
-        let mut output: Vec<&Item> = vec![];
+    /// Creates a new version of the Item list in which only
+    /// open Items are being kept.
+    /// 
+    /// # Returns
+    /// * `HashMap<String, Item>`: Filtered item list     
+    pub fn filter_open_items(&self) -> HashMap<String, Item> {
+        let mut output: HashMap<String, Item> = HashMap::new();
         for item in &self.items {
             if !item.1.is_completed() {
-                output.push(item.1);
+                output.insert(item.0.clone(), item.1.clone());
             }
-        }
+        }        
         output
     }
 
+    /// Converts an item HashMap into a Vector in which the original entries are
+    /// stored in tuples. The items in the resulting vector are sorted alphabetically
+    /// based on the Item names.
+    /// 
+    /// # Returns
+    /// * `Vec<(&String, &Item)>`: Sorted Vector representing the inserted HashMap      
+    pub fn list_items (hash_map: &HashMap<String, Item>) -> Vec<(&String, &Item)> {
+        sort_list(hash_map)
+    }        
+
+
+    /// Checks whether the item HashMap contains an Item with the submitted name
+    /// 
+    /// # Arguments
+    /// * item_name : &str - Name of the Item 
+    /// 
+    /// # Returns
+    /// * `bool`: is `true` if the Item exists    
     pub fn list_contains_item(&self, item_name: &str) -> bool {
         self.items.contains_key(item_name)
     }
 
+    /// Permanently deletes an Item from the item HashMap if it exists. If not, the method returns an error instead.
+    /// 
+    /// # Arguments
+    /// * item_name : &str - Name of the Item 
+    /// 
+    /// # Errors
+    /// * `ToDoSelectionError::ToDoNotFound`: No Item with the submitted name exists in the `item` field.  
     pub fn delete_item(&mut self, item_name: &str) -> Result<(), ToDoSelectionError> {
         if self.list_contains_item(item_name) {
             self.items.remove(item_name);
@@ -166,6 +230,14 @@ impl ToDoList {
         }
     }
 
+    /// Change the description of an existing list Item. If not, the method returns an error instead.
+    /// 
+    /// # Arguments
+    /// * item_name : &str - Name of the Item 
+    /// * new_description : &str - Updated description of the Item
+    /// 
+    /// # Errors
+    /// * `ToDoSelectionError::ToDoNotFound`: No Item with the submitted name exists in the `item` field.      
     pub fn update_item_description(&mut self, item_name: &str, new_description: &str) -> Result<(), ToDoSelectionError> {
         if let Some(item) = self.items.get_mut(item_name) {
             item.update_description(new_description);
@@ -175,6 +247,14 @@ impl ToDoList {
         }
     }
 
+    /// Change the priority of an existing list Item. If not, the method returns an error instead.
+    /// 
+    /// # Arguments
+    /// * item_name : &str - Name of the Item 
+    /// * new_priority : &str - Updated Priority of the Item
+    /// 
+    /// # Errors
+    /// * `ToDoSelectionError::ToDoNotFound`: No Item with the submitted name exists in the `item` field.     
     pub fn update_item_priority(&mut self, item_name: &str, new_priority: &str) -> Result<(), ToDoSelectionError> {
         if let Some(item) = self.items.get_mut(item_name) {
             item.update_priority(new_priority);
@@ -184,6 +264,13 @@ impl ToDoList {
         }
     }
 
+    /// Mark a list Item as completed if it exists. If not, the method returns an error instead.
+    /// 
+    /// # Arguments
+    /// * item_name : &str - Name of the Item 
+    /// 
+    /// # Errors
+    /// * `ToDoSelectionError::ToDoNotFound`: No Item with the submitted name exists in the `item` field.    
     pub fn close_list_item(&mut self, item_name: &str) -> Result<(), ToDoSelectionError> {
         if let Some(item) = self.items.get_mut(item_name) {
             item.complete_item();
@@ -193,6 +280,13 @@ impl ToDoList {
         }        
     }
 
+    /// Mark a list Item as uncompleted if it exists. If not, the method returns an error instead.
+    /// 
+    /// # Arguments
+    /// * item_name : &str - Name of the Item 
+    /// 
+    /// # Errors
+    /// * `ToDoSelectionError::ToDoNotFound`: No Item with the submitted name exists in the `item` field.     
     pub fn open_list_item(&mut self, item_name: &str) -> Result<(), ToDoSelectionError> {
         if let Some(item) = self.items.get_mut(item_name) {
             item.open_item();
