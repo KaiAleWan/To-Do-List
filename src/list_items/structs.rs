@@ -1,7 +1,7 @@
 use crate::list_items::enums::{Priority, ToDoSelectionError};
 use crate::utils::functions::{sort_list};
 use std::collections::HashMap;
-
+use chrono::{Local, NaiveDate};
 
 /// Representation of a single to-do list item.
 #[derive(Debug, Clone)]
@@ -13,9 +13,9 @@ pub struct Item {
     /// Priority to the action (high/medium/low)
     priority: Priority,
     /// Date when the item was created
-    creation_date: String,
+    creation_date: NaiveDate,
     /// Optional due date for the item
-    due_date: Option<String>,
+    due_date: Option<NaiveDate>,
     /// Flag to mark if an item was completed
     completed: bool,
 }
@@ -23,21 +23,35 @@ pub struct Item {
 impl Item {
     /// Constructor function for a new `Item`. Every Item will be created as non-completed.
     /// The creation date is always the day when the function was called.
+    /// The due_date_ymd parameter is optional and can be used to assign a due date to the Item.
+    /// A Some variant is expected to use a Tuple with 3 numeric values presenting year, month, day, in this order.
+    /// If an invalid value is used, the function will ignore it and print a message in the log.
     /// 
     /// # Arguments
     /// * name : &str - Name of the Item
     /// * description : &str - Item description
     /// * priority : &str - Item priority
+    /// * due_date_ymd : Option<(i32, u32, u32)> - Item due date (optional)
     /// 
     /// # Returns
     /// * `Item`: A new instance of an Item 
-    fn new(name: &str, description: &str, priority: &str) -> Self {
+    fn new(name: &str, description: &str, priority: &str, due_date_ymd: Option<(i32, u32, u32)>) -> Self {
+        // Process the optional due date parameter
+        let mut due_date: Option<NaiveDate> = None;
+        if let Some(ymd) = due_date_ymd {
+            if let Some(assigned_due_date) = NaiveDate::from_ymd_opt(ymd.0, ymd.1, ymd.2) {
+                due_date = Some(assigned_due_date);
+            } else {
+                println!("The submitted values for year {}, month {}, and day {} did not return a valid date", ymd.0, ymd.1, ymd.2);
+            }
+        }
+
         Item { 
             name: name.to_string(), 
             description: description.to_string(), 
             priority: Priority::from_str(priority), 
-            creation_date: "".to_string(), 
-            due_date: None, 
+            creation_date: Local::now().date_naive(), 
+            due_date: due_date, 
             completed: false 
         }
     }
@@ -65,17 +79,33 @@ impl Item {
         &self.priority
     }        
 
-    fn get_creation_date(&self) -> &str {
+    /// Creates a reference to the `Item` creation_date.
+    /// 
+    /// # Returns
+    /// * `&NaiveDate`: Item creation date      
+    fn get_creation_date(&self) -> &NaiveDate {
         &self.creation_date
     }          
 
-    fn get_due_date(&self) -> &str {
-        if let Some(date) = &self.due_date {
-            date
+    /// Creates a reference to the `Item` due_date.
+    /// 
+    /// # Returns
+    /// * `&Option<NaiveDate>`: Item due date (when applicable)       
+    fn get_due_date(&self) -> &Option<NaiveDate >{
+        &self.due_date
+    }           
+
+    /// Checks whether the Item is overdue (i.e., the due date lies in the past).
+    /// 
+    /// # Returns
+    /// * `bool`: Is `true` if the due date passed   
+    fn is_overdue(&self) -> bool {
+        if let Some(due_date) = self.due_date {
+            due_date < Local::now().date_naive()
         } else {
-            ""
+            false
         }
-    }              
+    }   
 
     /// Indicates whether the item has been completed yet.
     /// 
@@ -100,6 +130,19 @@ impl Item {
     /// * new_priority : `&str` - New value for the priority field    
     fn update_priority(&mut self, new_priority: &str) {
         self.priority = Priority::from_str(new_priority);
+    }
+
+    /// Change the `Item` due_date.
+    /// If an invalid date is submitted, the method will not update the Item and print a message in the log.
+    /// 
+    /// # Arguments
+    /// * ymd : (i32, u32, u32) - Updated due_date of the Item (year, month, day)    
+    fn update_due_date(&mut self, ymd: (i32, u32, u32)) {
+        if let Some(due_date) = NaiveDate::from_ymd_opt(ymd.0, ymd.1, ymd.2) {
+            self.due_date = Some(due_date)
+        } else {
+            println!("The submitted values for year {}, month {}, and day {} did not return a valid date", ymd.0, ymd.1, ymd.2);
+        }
     }
 
     /// Mark an `Item` as completed.  
@@ -149,12 +192,13 @@ impl ToDoList {
     /// * description : &str - Item description
     /// * priority : &str - Item priority
     /// * replace: bool - Set to true to replace an existing Item
+    /// * due_date_ymd : Option<(i32, u32, u32)> - Item due date (optional)
     /// 
     /// # Errors
     /// * `ToDoSelectionError::ToDoAlreadyPresent`: An Item with the same name already exists in the ToDoList and replace was set to false.  
-    pub fn create_item(&mut self, name: &str, description: &str, priority: &str, replace: bool) -> Result<(), ToDoSelectionError> {
+    pub fn create_item(&mut self, name: &str, description: &str, priority: &str, due_date_ymd: Option<(i32, u32, u32)>, replace: bool) -> Result<(), ToDoSelectionError> {
         if !self.list_contains_item(name) || replace {
-            self.items.insert(name.to_string(), Item::new(name, description, priority));
+            self.items.insert(name.to_string(), Item::new(name, description, priority, due_date_ymd));
             Ok(())
         } else {
             Err(ToDoSelectionError::ToDoAlreadyPresent)
@@ -192,6 +236,21 @@ impl ToDoList {
         output
     }
 
+    /// Creates a new version of the Item list in which only
+    /// overdue and open Items are being kept.
+    /// 
+    /// # Returns
+    /// * `HashMap<String, Item>`: Filtered item list
+    pub fn filter_overdue_items(&self) -> HashMap<String, Item> {
+        let mut output: HashMap<String, Item> = HashMap::new();
+        for item in &self.items {
+            if !item.1.is_completed() && item.1.is_overdue() {
+                output.insert(item.0.clone(), item.1.clone());
+            }
+        }
+        output
+    }
+
     /// Converts an item HashMap into a Vector in which the original entries are
     /// stored in tuples. The items in the resulting vector are sorted alphabetically
     /// based on the Item names.
@@ -201,7 +260,6 @@ impl ToDoList {
     pub fn list_items (hash_map: &HashMap<String, Item>) -> Vec<(&String, &Item)> {
         sort_list(hash_map)
     }        
-
 
     /// Checks whether the item HashMap contains an Item with the submitted name
     /// 
@@ -230,7 +288,7 @@ impl ToDoList {
         }
     }
 
-    /// Change the description of an existing list Item. If not, the method returns an error instead.
+    /// Change the description of an Item in the item HashMap if it exists. If not, the method returns an error instead.
     /// 
     /// # Arguments
     /// * item_name : &str - Name of the Item 
@@ -247,7 +305,7 @@ impl ToDoList {
         }
     }
 
-    /// Change the priority of an existing list Item. If not, the method returns an error instead.
+    /// Change the priority of an Item in the item HashMap if it exists. If not, the method returns an error instead.
     /// 
     /// # Arguments
     /// * item_name : &str - Name of the Item 
@@ -263,6 +321,24 @@ impl ToDoList {
             Err(ToDoSelectionError::ToDoNotFound)
         }
     }
+
+    /// Change the due date of an Item in the item HashMap if it exists. If not, the method returns an error instead.
+    /// If an invalid date is submitted, the method will not update the Item and print a message in the log.
+    /// 
+    /// # Arguments
+    /// * item_name : &str - Name of the Item 
+    /// * ymd : (i32, u32, u32) - Updated due_date of the Item (year, month, day)
+    /// 
+    /// # Errors
+    /// * `ToDoSelectionError::ToDoNotFound`: No Item with the submitted name exists in the `item` field.     
+    pub fn update_item_due_date(&mut self, item_name: &str, ymd: (i32, u32, u32)) -> Result<(), ToDoSelectionError> {
+        if let Some(item) = self.items.get_mut(item_name) {
+            item.update_due_date(ymd);
+            Ok(())
+        } else {
+            Err(ToDoSelectionError::ToDoNotFound)
+        }
+    }    
 
     /// Mark a list Item as completed if it exists. If not, the method returns an error instead.
     /// 
