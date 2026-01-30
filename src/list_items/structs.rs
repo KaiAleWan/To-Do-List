@@ -2,9 +2,10 @@ use crate::list_items::enums::{Priority, ToDoSelectionError};
 use crate::utils::functions::{sort_list};
 use std::collections::HashMap;
 use chrono::{Local, NaiveDate};
+use serde::{Deserialize, Serialize};
 
 /// Representation of a single to-do list item.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Item {
     /// Name of the item
     name: String,
@@ -157,6 +158,7 @@ impl Item {
 
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 /// Representation of a to-do list with multiple items.
 pub struct ToDoList {
     /// Name of the to-do list

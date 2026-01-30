@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
 
 /// The `Priority` enum is used to store the priority assigned to an Item in the ToDoList.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Priority {
     /// Indicates low priority task
     Low,
