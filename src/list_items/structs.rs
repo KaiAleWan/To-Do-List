@@ -4,6 +4,8 @@ use crate::utils::functions::{sort_list};
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::fs::{write, File};
+use std::path::Path;
 use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
 
@@ -64,7 +66,7 @@ impl Item {
     /// 
     /// # Returns
     /// * `&str`: Item name
-    fn get_name(&self) -> &str {
+    pub fn get_name(&self) -> &str {
         &self.name
     }   
 
@@ -72,7 +74,7 @@ impl Item {
     /// 
     /// # Returns
     /// * `&str`: Item description    
-    fn get_description(&self) -> &str {
+    pub fn get_description(&self) -> &str {
         &self.description
     }       
 
@@ -80,7 +82,7 @@ impl Item {
     /// 
     /// # Returns
     /// * `&Priority`: Item priority     
-    fn get_priority(&self) -> &Priority {
+    pub fn get_priority(&self) -> &Priority {
         &self.priority
     }        
 
@@ -88,7 +90,7 @@ impl Item {
     /// 
     /// # Returns
     /// * `&NaiveDate`: Item creation date      
-    fn get_creation_date(&self) -> &NaiveDate {
+    pub fn get_creation_date(&self) -> &NaiveDate {
         &self.creation_date
     }          
 
@@ -96,7 +98,7 @@ impl Item {
     /// 
     /// # Returns
     /// * `&Option<NaiveDate>`: Item due date (when applicable)       
-    fn get_due_date(&self) -> &Option<NaiveDate >{
+    pub fn get_due_date(&self) -> &Option<NaiveDate >{
         &self.due_date
     }           
 
@@ -104,7 +106,7 @@ impl Item {
     /// 
     /// # Returns
     /// * `bool`: Is `true` if the due date passed   
-    fn is_overdue(&self) -> bool {
+    pub fn is_overdue(&self) -> bool {
         if let Some(due_date) = self.due_date {
             due_date < Local::now().date_naive()
         } else {
@@ -116,7 +118,7 @@ impl Item {
     /// 
     /// # Returns
     /// * `bool`: Is true if the `Item` has been completed        
-    fn is_completed(&self) -> bool {
+    pub fn is_completed(&self) -> bool {
         self.completed
     }      
 
@@ -246,8 +248,26 @@ impl ToDoList {
     /// 
     /// # Returns
     /// * `bool`: is `true` if the Item exists    
-    pub fn list_contains_item(&self, item_name: &str) -> bool {
+    fn list_contains_item(&self, item_name: &str) -> bool {
         self.items.contains_key(item_name)
+    }
+
+    /// Returns an immutable reference to an `Item` stored in the items field.
+    /// 
+    /// # Arguments
+    /// * item_name : &str - Name of the Item 
+    /// 
+    /// # Returns
+    /// * `&Item`: Reference to the Item
+    /// 
+    /// # Errors
+    /// * `ToDoSelectionError::ToDoNotFound`: No Item with the submitted name exists in the `item` field. 
+    pub fn get_item_ref(&self, item_name: &str) -> Result<&Item, ToDoSelectionError> {
+        if self.list_contains_item(item_name) {
+            Ok(self.items.get(item_name).unwrap())
+        } else {
+            Err(ToDoSelectionError::ToDoNotFound)
+        }        
     }
 
     /// Permanently deletes an Item from the item HashMap if it exists. If not, the method returns an error instead.
@@ -415,5 +435,31 @@ impl ToDoList {
             println!("\n{}", item.1);
         }
     }
+
+    /// Permanently save the `ToDoList` and all its Items to a JSON file. 
+    /// The file will be generated in the ./lists folder.
+    /// 
+    /// # Panics
+    /// The method will panic if the ToDoList cannot be converted to a JSON file or
+    /// if the expected lists folder cannot be found.
+    pub fn save_to_do_list(&self) {
+        let json = serde_json::to_string_pretty(self).expect("JSON serialize error");
+        let path = format!("./lists/{}.json", self.name);
+        write(path, json).expect("Unable to write file");
+    }
+
+    /// Load an existing `ToDoList` and its Items from an JSON file. 
+    /// The JSON file is expected to be present in the ./lists folder.
+    /// 
+    /// # Panics
+    /// The function will panic if the ToDoList cannot be loaded from JSON file or
+    /// if the expected lists folder cannot be found.    
+    pub fn load_to_do_list(list_name: &str) -> Self {
+        let path =format!("./lists/{}.json", list_name); 
+        let file: File = File::open(path).expect("Could not open the file");
+        let json: serde_json::Value =
+            serde_json::from_reader(file).expect("Could not process JSON file");
+        serde_json::from_str(&json.to_string()).unwrap()
+    }    
 
 }
