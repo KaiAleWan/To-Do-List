@@ -1,14 +1,11 @@
-use crate::list_items;
 use crate::list_items::enums::{Priority, ToDoSelectionError};
 use crate::utils::functions::{sort_list};
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::fs::{write, File};
-use std::path::Path;
 use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
-
 
 /// Representation of a single to-do list item.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -173,8 +170,6 @@ impl Display for Item {
         }
     }
 }
-
-
 
 #[derive(Debug, Serialize, Deserialize)]
 /// Representation of a to-do list with multiple items.
