@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+use std::error::Error;
+use std::fmt::{Display, Formatter, Result};
 
 /// The `Priority` enum is used to store the priority assigned to an Item in the ToDoList.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,8 +37,25 @@ impl Priority {
     }
 }
 
-use std::error::Error;
-use std::fmt::{Display, Formatter, Result};
+impl Display for Priority {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        use Priority::*;
+        match self {
+            Low => write!(
+                f, "Low"
+            ),
+            Medium => write!(
+                f, "Medium"
+            ),
+            High => write!(
+                f, "High"
+            ),           
+            Invalid => write!(
+                f, "Unknown"
+            ),                    
+        }
+    }
+}
 
 /// Enum to handle errors caused by the invalid selection of ToDOList Items.
 #[derive(Debug)]

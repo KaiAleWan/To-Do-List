@@ -1,8 +1,12 @@
+use crate::list_items;
 use crate::list_items::enums::{Priority, ToDoSelectionError};
 use crate::utils::functions::{sort_list};
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
+
 
 /// Representation of a single to-do list item.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -158,6 +162,18 @@ impl Item {
 
 }
 
+impl Display for Item {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        if let Some(due_date) = self.due_date {
+            write!(f, "Name: {}\tDescription: {}\tPriority: {}\tCreation Date:{}\tDue Date:{}", self.name, self.description, self.priority, self.creation_date, due_date)
+        } else {
+            write!(f, "Name: {}\tDescription: {}\tPriority: {}\tCreation Date:{}\tDue Date: NA", self.name, self.description, self.priority, self.creation_date)
+        }
+    }
+}
+
+
+
 #[derive(Debug, Serialize, Deserialize)]
 /// Representation of a to-do list with multiple items.
 pub struct ToDoList {
@@ -222,46 +238,6 @@ impl ToDoList {
     pub fn get_description(&self) -> &str {
         &self.description
     }    
-
-    /// Creates a new version of the Item list in which only
-    /// open Items are being kept.
-    /// 
-    /// # Returns
-    /// * `HashMap<String, Item>`: Filtered item list     
-    pub fn filter_open_items(&self) -> HashMap<String, Item> {
-        let mut output: HashMap<String, Item> = HashMap::new();
-        for item in &self.items {
-            if !item.1.is_completed() {
-                output.insert(item.0.clone(), item.1.clone());
-            }
-        }        
-        output
-    }
-
-    /// Creates a new version of the Item list in which only
-    /// overdue and open Items are being kept.
-    /// 
-    /// # Returns
-    /// * `HashMap<String, Item>`: Filtered item list
-    pub fn filter_overdue_items(&self) -> HashMap<String, Item> {
-        let mut output: HashMap<String, Item> = HashMap::new();
-        for item in &self.items {
-            if !item.1.is_completed() && item.1.is_overdue() {
-                output.insert(item.0.clone(), item.1.clone());
-            }
-        }
-        output
-    }
-
-    /// Converts an item HashMap into a Vector in which the original entries are
-    /// stored in tuples. The items in the resulting vector are sorted alphabetically
-    /// based on the Item names.
-    /// 
-    /// # Returns
-    /// * `Vec<(&String, &Item)>`: Sorted Vector representing the inserted HashMap      
-    pub fn list_items (hash_map: &HashMap<String, Item>) -> Vec<(&String, &Item)> {
-        sort_list(hash_map)
-    }        
 
     /// Checks whether the item HashMap contains an Item with the submitted name
     /// 
@@ -371,6 +347,72 @@ impl ToDoList {
             Ok(())
         } else {
             Err(ToDoSelectionError::ToDoNotFound)
+        }
+    }
+
+    /// Creates a new version of the Item list in which only
+    /// open Items are being kept.
+    /// 
+    /// # Returns
+    /// * `HashMap<String, Item>`: Filtered item list     
+    pub fn filter_open_items(&self) -> HashMap<String, Item> {
+        let mut output: HashMap<String, Item> = HashMap::new();
+        for item in &self.items {
+            if !item.1.is_completed() {
+                output.insert(item.0.clone(), item.1.clone());
+            }
+        }        
+        output
+    }
+
+    /// Creates a new version of the Item list in which only
+    /// overdue and open Items are being kept.
+    /// 
+    /// # Returns
+    /// * `HashMap<String, Item>`: Filtered item list
+    pub fn filter_overdue_items(&self) -> HashMap<String, Item> {
+        let mut output: HashMap<String, Item> = HashMap::new();
+        for item in &self.items {
+            if !item.1.is_completed() && item.1.is_overdue() {
+                output.insert(item.0.clone(), item.1.clone());
+            }
+        }
+        output
+    }
+
+    /// Converts an item HashMap into a Vector in which the original entries are
+    /// stored in tuples. The items in the resulting vector are sorted alphabetically
+    /// based on the Item names.
+    /// 
+    /// # Returns
+    /// * `Vec<(&String, &Item)>`: Sorted Vector representing the inserted HashMap      
+    pub fn list_all_items (hash_map: &HashMap<String, Item>) -> Vec<(&String, &Item)> {
+        sort_list(hash_map)
+    }         
+
+    /// Prints every Item in the ToDoList to the console.
+    pub fn display_all_items(&self) {
+        let list = Self::list_all_items(&self.items);
+        for item in list {
+            println!("\n{}", item.1);
+        }
+    }
+
+    /// Prints every non-completed Item in the ToDoList to the console.
+    pub fn display_all_open_items(&self) {
+        let filtered_list = self.filter_open_items();
+        let list = Self::list_all_items(&filtered_list);
+        for item in list {
+            println!("\n{}", item.1);
+        }
+    }    
+
+    /// Prints every overdue Item in the ToDoList to the console.
+    pub fn display_all_overdue_items(&self) {
+        let filtered_list = self.filter_overdue_items();
+        let list = Self::list_all_items(&filtered_list);
+        for item in list {
+            println!("\n{}", item.1);
         }
     }
 
