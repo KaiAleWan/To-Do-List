@@ -458,3 +458,9 @@ impl ToDoList {
     }    
 
 }
+
+impl Display for ToDoList {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "Name: {}\tDescription: {}", self.name, self.description)
+    }
+}
