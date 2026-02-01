@@ -55,7 +55,7 @@ impl Item {
             description: description.to_string(), 
             priority: Priority::from_str(priority), 
             creation_date: Local::now().date_naive(), 
-            due_date: due_date, 
+            due_date, 
             completed: false 
         }
     }
@@ -450,16 +450,13 @@ impl ToDoList {
     /// The function will panic if the ToDoList cannot be loaded from JSON file or
     /// if the expected lists folder cannot be found.    
     pub fn load_to_do_list(list_name: &str) -> Self {
-        let mut path: String = String::new();
-        if list_name.to_lowercase().contains(".json") {
-            path = format!("./lists/{}.json", list_name); 
+        let path = if list_name.to_lowercase().contains(".") {
+            format!("./lists/{}", list_name)
         } else {
-            path = format!("./lists/{}", list_name); 
-        }
-        let file: File = File::open(path).expect("Could not open the file");
-        let json: serde_json::Value =
-            serde_json::from_reader(file).expect("Could not process JSON file");
-        serde_json::from_str(&json.to_string()).unwrap()
+            format!("./lists/{}.json", list_name)
+        };
+        let file = File::open(&path).expect("Could not open the file");
+        serde_json::from_reader(file).expect("Could not process JSON file")
     }    
 
 }
