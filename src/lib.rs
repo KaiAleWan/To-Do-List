@@ -208,7 +208,7 @@ fn create_new_item(list :&mut ToDoList) {
     if let Err(e) = list.create_item(&item_name, &item_description, &item_priority, item_due_date, replace) {
         println!("The item was not created: {}", e);
     } else {
-        ToDoList::save_to_do_list(&list);
+        ToDoList::save_to_do_list(list);
     }
 }
 
@@ -270,7 +270,7 @@ fn select_and_modify_list(list :&mut ToDoList) {
                 list.open_list_item(&item_name).expect("The list Item does not exist");
             }                
             if input == 6 {
-                ToDoList::save_to_do_list(&list);
+                ToDoList::save_to_do_list(list);
             }
             if input == 7 {
                 break 'item_modification;
@@ -300,7 +300,7 @@ fn delete_list_item(list: &mut ToDoList) {
         let delete_confirmation = get_user_input();
         if delete_confirmation.to_lowercase().trim().eq("y") {
             list.delete_item(&delete_selection).expect("The list Item does not exist");
-            ToDoList::save_to_do_list(&list);
+            ToDoList::save_to_do_list(list);
             break 'item_deletion;
         }
     }
