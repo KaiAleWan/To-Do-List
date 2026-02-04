@@ -164,9 +164,9 @@ impl Item {
 impl Display for Item {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         if let Some(due_date) = self.due_date {
-            write!(f, "Name: {}\tDescription: {}\tPriority: {}\tCreation Date:{}\tDue Date:{}", self.name, self.description, self.priority, self.creation_date, due_date)
+            write!(f, "Name: {}\tDescription: {}\tPriority: {}\tCreation Date:{}\tDue Date:{}\tCompleted: {}", self.name, self.description, self.priority, self.creation_date, due_date, self.completed)
         } else {
-            write!(f, "Name: {}\tDescription: {}\tPriority: {}\tCreation Date:{}\tDue Date: NA", self.name, self.description, self.priority, self.creation_date)
+            write!(f, "Name: {}\tDescription: {}\tPriority: {}\tCreation Date:{}\tDue Date: NA\tCompleted: {}", self.name, self.description, self.priority, self.creation_date, self.completed)
         }
     }
 }
@@ -192,7 +192,7 @@ impl ToDoList {
     /// 
     /// # Returns
     /// * `ToDoList`: A new instance of a to-do list   
-    pub fn create_to_do_list(list_name: &str, list_description: &str) -> Self {
+    pub fn new(list_name: &str, list_description: &str) -> Self {
         ToDoList { name: list_name.to_string(), description: list_description.to_string(), items: HashMap::new() }
     }
 
@@ -243,7 +243,7 @@ impl ToDoList {
     /// 
     /// # Returns
     /// * `bool`: is `true` if the Item exists    
-    fn list_contains_item(&self, item_name: &str) -> bool {
+    pub fn list_contains_item(&self, item_name: &str) -> bool {
         self.items.contains_key(item_name)
     }
 
