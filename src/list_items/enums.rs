@@ -1,3 +1,8 @@
+//! # List Items Enums
+//!
+//! The modules defines enums  used in ToDoLists or Items. Enums may include 
+//! errors such as `ToDoSelectionError` or attributs like `Priority`
+
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result};

@@ -1,3 +1,10 @@
+//! # List Items Structs
+//!
+//! The modules defines the `Item` and `ToDoList` structs that are the basis
+//! for a to-do-list.
+//! In general, an Item is used to describe a specific task and attributes like priority
+//! or due date and ToDoList acts as a container that summarizes different Items.
+
 use crate::list_items::enums::{Priority, ToDoSelectionError};
 use crate::utils::functions::{sort_list};
 use std::collections::HashMap;

@@ -1,3 +1,7 @@
+//! # Utility Functions
+//!
+//! Stores miscellenious functions that are not directly related to a single struct type.
+
 use std::collections::HashMap;
 
 /// Converts a HashMap into a Vector. The Key-Value pair will be stored as a tuple.
