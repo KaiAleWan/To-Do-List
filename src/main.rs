@@ -1,4 +1,11 @@
-use to_do_list::{get_user_input, show_all_lists, open_to_do_list, modify_to_do_list, create_to_do_list};
+use to_do_list::{
+    get_user_input, 
+    visualize_lists, 
+    show_all_lists, 
+    open_to_do_list, 
+    modify_to_do_list, 
+    create_to_do_list
+};
 
 fn main() {
     println!("Welcome to your To-Do Lists.");
@@ -13,7 +20,7 @@ fn main() {
             }
         };       
         if input == 1 {
-            show_all_lists();
+            visualize_lists();
         }
         if input == 2 {
             create_to_do_list();

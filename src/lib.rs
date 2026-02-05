@@ -119,6 +119,49 @@ pub fn show_all_lists() {
     }
 }
 
+/// Starts a loop that can be used to examine the Items stored in a ToDoList.
+/// It takes user input to select a list and to choose whether all Items or just a
+/// subset should be printed to the standard output.
+pub fn visualize_lists() {
+    'list_visualization: loop {
+        show_all_lists();
+        println!("Enter the name of a list to examine its contents or 'cancel' to return");
+        let list_selection = get_user_input();
+        if list_selection.to_lowercase().trim().eq("cancel") {
+            break 'list_visualization;
+        }    
+        if !list_file_exists(&list_selection) {
+            println!("No list with the selected name {} was found.", &list_selection);
+            continue 'list_visualization;
+        }
+        let list = open_to_do_list(&list_selection).expect("Selected list does not exist");
+        'item_visualization: loop {
+            println!("Make a selection:\n1: View all items\n2: List open items\n3: List overdue items\n4: Cancel");
+            let input = get_user_input();
+            let input: u32 = match input.trim().parse() {
+                Ok(num) => num,
+                Err(_) => {
+                    println!("Please enter a number");
+                    continue 'item_visualization;
+                }
+            };
+            if input == 1 {
+                list.display_all_items();
+            } 
+            if input == 2 {
+                list.display_all_open_items();
+            }
+            if input == 3 {
+                list.display_all_overdue_items();
+            }
+            if input == 4 {
+                break 'item_visualization;
+            }            
+        }
+    }
+
+}
+
 /// Checks whether the ./lists folder contains a list with a specific name.
 /// The function checks the list name with and without the .json extension.
 /// 
